@@ -1,3 +1,6 @@
+import { useContext, useEffect } from 'react';
+import Cookies from 'js-cookie';
+
 import Register from './components/Register';
 import Login from './components/Login';
 import Home from './components/Home';
@@ -9,15 +12,32 @@ import Unauthorized from './components/Unauthorized';
 import Lounge from './components/Lounge';
 import LinkPage from './components/LinkPage';
 import RequireAuth from './components/RequireAuth';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+
+import AuthContext from './context/AuthProvider';
+import { TOKEN_VALID } from './constants/general';
+import PersistLogin from './components/PersistLogin';
 
 const ROLES = {
-  'User': 2001,
-  'Editor': 1984,
-  'Admin': 5150
-}
+  User: 2001,
+  Editor: 1984,
+  Admin: 5150,
+};
 
 function App() {
+  const { setAuth } = useContext(AuthContext);
+  const location = useLocation();
+
+  useEffect(() => {
+    // check if jwt token expiry cookie is expired
+    const tokenValid = Cookies.get(TOKEN_VALID);
+    console.log('[@App] tokenValid:', tokenValid);
+
+    // if it is, remove jwt accessToken
+    if (!tokenValid) {
+      setAuth((prev) => ({ ...prev, accessToken: '' }));
+    }
+  }, [location.pathname]);
 
   return (
     <Routes>
@@ -29,6 +49,7 @@ function App() {
         <Route path="unauthorized" element={<Unauthorized />} />
 
         {/* we want to protect these routes */}
+        {/* <Route element={<PersistLogin />}> */}
         <Route element={<RequireAuth allowedRoles={[ROLES.User]} />}>
           <Route path="/" element={<Home />} />
         </Route>
@@ -37,14 +58,16 @@ function App() {
           <Route path="editor" element={<Editor />} />
         </Route>
 
-
         <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
           <Route path="admin" element={<Admin />} />
         </Route>
 
-        <Route element={<RequireAuth allowedRoles={[ROLES.Editor, ROLES.Admin]} />}>
+        <Route
+          element={<RequireAuth allowedRoles={[ROLES.Editor, ROLES.Admin]} />}
+        >
           <Route path="lounge" element={<Lounge />} />
         </Route>
+        {/* </Route> */}
 
         {/* catch all */}
         <Route path="*" element={<Missing />} />

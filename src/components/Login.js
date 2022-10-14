@@ -1,8 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import useAuth from '../hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 import axios from '../api/axios';
+import { TOKEN_VALID } from '../constants/general';
 const LOGIN_URL = '/api/auth';
 
 const Login = () => {
@@ -10,7 +12,8 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  // const from = location.state?.from?.pathname || '/';
+  const from = '/admin';
 
   const userRef = useRef();
   const errRef = useRef();
@@ -42,7 +45,11 @@ const Login = () => {
       console.log('loginData', JSON.stringify(response?.data));
       const accessToken = response?.data?.accessToken;
       const roles = response?.data?.roles;
-      // access token set globally
+      // refresh token set globally in cookies
+      Cookies.set('refresh', response?.data?.refreshToken, { expires: 2 });
+      // set token valid flag to act as accessToken expiry counter
+      Cookies.set(TOKEN_VALID, TOKEN_VALID, { expires: 2 });
+      // access token set globally in memory
       setAuth({ user: username, roles, accessToken });
       setUser('');
       setPwd('');

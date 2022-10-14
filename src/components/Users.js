@@ -1,25 +1,34 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from '../api/axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthProvider';
 import useAuth from '../hooks/useAuth';
 
+import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import useRefreshToken from '../hooks/useRefreshToken';
 
 const Users = () => {
+  const axiosPrivate = useAxiosPrivate();
   const [users, setUsers] = useState();
   const refresh = useRefreshToken();
-  const authValue = useContext(AuthContext);
-  console.log('AuthContext:', authValue);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { auth, setAuth } = useContext(AuthContext);
+
+  console.log('AuthContext State:', auth);
 
   useEffect(() => {
     let isMounted = true; // indicate vituralDOM is mounted as useEffect is in effect
     const controller = new AbortController(); // from axios, used to abort ongoing requests
+
     const getUsers = async () => {
       try {
-        const { data } = await axios.get('/users', {
-          headers: { Authorization: '9' },
+        console.log(`%c[@apiHelper] !%TWO%! GET INSTANCE call`, 'color: aqua');
+        const { data } = await axiosPrivate.get('/users', {
+          signal: controller.signal,
         });
-        console.log('user data:', data);
+
+        console.log('[@USERS API RESPONSE] user data:', data);
         setUsers(data);
       } catch (err) {
         console.log('err:', err);
@@ -46,6 +55,9 @@ const Users = () => {
         ))}
       </ul>
 
+      <button onClick={() => setAuth((prev) => ({ ...prev, accessToken: '' }))}>
+        Clear accessToken
+      </button>
       <button onClick={() => refresh()}>Test token</button>
     </article>
   );
